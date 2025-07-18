@@ -1,7 +1,4 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
@@ -36,8 +33,6 @@
       "request": "attach",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
-      // fix source mapping when debugging in sandbox using global installation
-      // note this does not interfere when remoteRoot is also ${workspaceFolder}/packages
       "remoteRoot": "/usr/local/share/npm-global/lib/node_modules/@gemini-cli",
       "localRoot": "${workspaceFolder}/packages"
     },
@@ -68,6 +63,32 @@
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug CLI (Custom)",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/packages/cli/dist/index.js",
+      "args": ["--model", "gemini-2.5-flash"],
+      "preLaunchTask": "npm: build",
+      "cwd": "${workspaceFolder}/packages/cli",
+      "outFiles": ["${workspaceFolder}/packages/cli/dist/**/*.js"],
+      "console": "externalTerminal"
+    },
+    {
+      "name": "Python Debugger: Python File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}"
+    },
+    {
+      "name": "Python Debugger gcli",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "C:/gemini-cli/gcli.py",
+      "cwd": "C:/gemini-cli",
+      "console": "externalTerminal"
     }
   ],
   "inputs": [

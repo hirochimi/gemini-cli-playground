@@ -9,7 +9,8 @@ import { render } from 'ink';
 import { AppWrapper } from './ui/App.js';
 import { loadCliConfig, parseArguments, CliArgs } from './config/config.js';
 import { readStdin } from './utils/readStdin.js';
-import { basename } from 'node:path';
+import fs from 'node:fs';
+import path, { basename } from 'node:path';
 import v8 from 'node:v8';
 import os from 'node:os';
 import { spawn } from 'node:child_process';
@@ -85,6 +86,19 @@ async function relaunchWithAdditionalArgs(additionalArgs: string[]) {
   process.exit(0);
 }
 import { runAcpPeer } from './acp/acpPeer.js';
+
+function getLogFileName() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  return path.join(
+    process.cwd(),
+    `gemini-cli-${year}${month}${day}-${hours}${minutes}.txt`,
+  );
+}
 
 export async function main() {
   const workspaceRoot = process.cwd();
@@ -205,6 +219,8 @@ export async function main() {
 
   // Render UI, passing necessary config values. Check that there is no command line question.
   if (shouldBeInteractive) {
+    const logFilePath = getLogFileName();
+    fs.writeFileSync(logFilePath, '');
     const version = await getCliVersion();
     setWindowTitle(basename(workspaceRoot), settings);
     const instance = render(
@@ -214,6 +230,7 @@ export async function main() {
           settings={settings}
           startupWarnings={startupWarnings}
           version={version}
+          logFilePath={logFilePath}
         />
       </React.StrictMode>,
       { exitOnCtrlC: false },

@@ -93,6 +93,7 @@ export const useGeminiStream = (
   performMemoryRefresh: () => Promise<void>,
   modelSwitchedFromQuotaError: boolean,
   setModelSwitchedFromQuotaError: React.Dispatch<React.SetStateAction<boolean>>,
+  logFilePath: string,
 ) => {
   const [initError, setInitError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -235,6 +236,8 @@ export const useGeminiStream = (
         onDebugMessage(`User query: '${trimmedQuery}'`);
         await logger?.logMessage(MessageSenderType.USER, trimmedQuery);
 
+        await fs.appendFile(logFilePath, `You: ${trimmedQuery}\n`);
+
         // Handle UI-only commands first
         const slashCommandResult = await handleSlashCommand(trimmedQuery);
 
@@ -308,15 +311,16 @@ export const useGeminiStream = (
   // --- Stream Event Handlers ---
 
   const handleContentEvent = useCallback(
-    (
+    async (
       eventValue: ContentEvent['value'],
       currentGeminiMessageBuffer: string,
       userMessageTimestamp: number,
-    ): string => {
+    ): Promise<string> => {
       if (turnCancelledRef.current) {
         // Prevents additional output after a user initiated cancel.
         return '';
       }
+      await fs.appendFile(logFilePath, eventValue);
       let newGeminiMessageBuffer = currentGeminiMessageBuffer + eventValue;
       if (
         pendingHistoryItemRef.current?.type !== 'gemini' &&
@@ -476,7 +480,7 @@ export const useGeminiStream = (
             setThought(event.value);
             break;
           case ServerGeminiEventType.Content:
-            geminiMessageBuffer = handleContentEvent(
+            geminiMessageBuffer = await handleContentEvent(
               event.value,
               geminiMessageBuffer,
               userMessageTimestamp,
