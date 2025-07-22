@@ -58,6 +58,8 @@ import {
   FlashFallbackEvent,
   logFlashFallback,
   AuthType,
+  type OpenFiles,
+  ideContext,
 } from '@google/gemini-cli-core';
 import { validateAuthMethod } from '../config/auth.js';
 import { useLogger } from './hooks/useLogger.js';
@@ -159,6 +161,14 @@ const App = ({ config, settings, startupWarnings = [], version, logFilePath }: A
   const [modelSwitchedFromQuotaError, setModelSwitchedFromQuotaError] =
     useState<boolean>(false);
   const [userTier, setUserTier] = useState<UserTierId | undefined>(undefined);
+  const [openFiles, setOpenFiles] = useState<OpenFiles | undefined>();
+
+  useEffect(() => {
+    const unsubscribe = ideContext.subscribeToOpenFiles(setOpenFiles);
+    // Set the initial value
+    setOpenFiles(ideContext.getOpenFilesContext());
+    return unsubscribe;
+  }, []);
 
   const openPrivacyNotice = useCallback(() => {
     setShowPrivacyNotice(true);
@@ -197,26 +207,11 @@ const App = ({ config, settings, startupWarnings = [], version, logFilePath }: A
 
   // Sync user tier from config when authentication changes
   useEffect(() => {
-    const syncUserTier = async () => {
-      try {
-        const configUserTier = await config.getUserTier();
-        if (configUserTier !== userTier) {
-          setUserTier(configUserTier);
-        }
-      } catch (error) {
-        // Silently fail - this is not critical functionality
-        // Only log in debug mode to avoid cluttering the console
-        if (config.getDebugMode()) {
-          console.debug('Failed to sync user tier:', error);
-        }
-      }
-    };
-
     // Only sync when not currently authenticating
     if (!isAuthenticating) {
-      syncUserTier();
+      setUserTier(config.getGeminiClient()?.getUserTier());
     }
-  }, [config, userTier, isAuthenticating]);
+  }, [config, isAuthenticating]);
 
   const {
     isEditorDialogOpen,
@@ -243,7 +238,9 @@ const App = ({ config, settings, startupWarnings = [], version, logFilePath }: A
         config.getDebugMode(),
         config.getFileService(),
         config.getExtensionContextFilePaths(),
+        config.getFileFilteringOptions(),
       );
+
       config.setUserMemory(memoryContent);
       config.setGeminiMdFileCount(fileCount);
       setGeminiMdFileCount(fileCount);
@@ -302,7 +299,7 @@ const App = ({ config, settings, startupWarnings = [], version, logFilePath }: A
         config.getContentGeneratorConfig().authType ===
         AuthType.LOGIN_WITH_GOOGLE
       ) {
-        // Use actual user tier if available, otherwise default to FREE tier behavior (safe default)
+        // Use actual user tier if available; otherwise, default to FREE tier behavior (safe default)
         const isPaidTier =
           userTier === UserTierId.LEGACY || userTier === UserTierId.STANDARD;
 
@@ -885,9 +882,11 @@ const App = ({ config, settings, startupWarnings = [], version, logFilePath }: A
                     </Text>
                   ) : (
                     <ContextSummaryDisplay
+                      openFiles={openFiles}
                       geminiMdFileCount={geminiMdFileCount}
                       contextFileNames={contextFileNames}
                       mcpServers={config.getMcpServers()}
+                      blockedMcpServers={config.getBlockedMcpServers()}
                       showToolDescriptions={showToolDescriptions}
                     />
                   )}
