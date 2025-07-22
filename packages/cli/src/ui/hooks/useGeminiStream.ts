@@ -690,6 +690,7 @@ export const useGeminiStream = (
         }
       } finally {
         setIsResponding(false);
+        await fs.appendFile(logFilePath, '\n\n\n');
       }
     },
     [
