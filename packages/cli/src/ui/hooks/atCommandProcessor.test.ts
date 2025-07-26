@@ -11,6 +11,7 @@ import { Config, FileDiscoveryService } from '@google/gemini-cli-core';
 import { ToolCallStatus } from '../types.js';
 import { UseHistoryManagerReturn } from './useHistoryManager.js';
 import * as fsPromises from 'fs/promises';
+import * as path from 'path';
 import type { Stats } from 'fs';
 
 const mockGetToolRegistry = vi.fn();
@@ -445,7 +446,7 @@ describe('handleAtCommand', () => {
     const invalidFile = 'nonexistent.txt';
     const query = `Look at @${file1} then @${invalidFile} and also just @ symbol, then @valid2.glob`;
     const file2Glob = 'valid2.glob';
-    const resolvedFile2 = 'resolved/valid2.actual';
+    const resolvedFile2 = path.join('resolved', 'valid2.actual');
     const content2 = 'Globbed content';
 
     // Mock fs.stat for file1 (valid)

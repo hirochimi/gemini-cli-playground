@@ -15,6 +15,8 @@ import {
   Mock,
 } from 'vitest';
 import * as fs from 'fs/promises';
+import * as path from 'path';
+import * as os from 'os';
 import { restoreCommand } from './restoreCommand.js';
 import { type CommandContext } from './types.js';
 import { createMockCommandContext } from '../../test-utils/mockCommandContext.js';
@@ -41,7 +43,9 @@ describe('restoreCommand', () => {
 
     mockConfig = {
       getCheckpointingEnabled: vi.fn().mockReturnValue(true),
-      getProjectTempDir: vi.fn().mockReturnValue('/tmp/gemini'),
+      getProjectTempDir: vi
+        .fn()
+        .mockReturnValue(path.join(os.tmpdir(), 'gemini')),
       getGeminiClient: vi.fn().mockReturnValue({
         setHistory: mockSetHistory,
       }),
@@ -96,7 +100,7 @@ describe('restoreCommand', () => {
         content: 'No restorable tool calls found.',
       });
       expect(mockFsPromises.mkdir).toHaveBeenCalledWith(
-        '/tmp/gemini/checkpoints',
+        path.join(mockConfig.getProjectTempDir(), 'checkpoints'),
         {
           recursive: true,
         },

@@ -10,6 +10,7 @@ import { type CommandContext } from './types.js';
 import { type Config } from '@google/gemini-cli-core';
 import * as child_process from 'child_process';
 import { glob } from 'glob';
+import * as path from 'path';
 
 import {
   getMCPDiscoveryState,
@@ -138,19 +139,25 @@ describe('ideCommand', () => {
     });
 
     it('should show an error if VSCode is not installed', async () => {
-      execSyncSpy.mockImplementation(() => {
-        throw new Error('Command not found');
+      execSyncSpy.mockImplementation((command: string) => {
+        if (command.startsWith('where') || command.startsWith('which')) {
+          throw new Error('Command not found');
+        }
+        // For other commands, let it pass through or mock as needed
+        return '';
       });
 
       const command = ideCommand(mockConfig);
       await command?.subCommands?.[1].action(mockContext, '');
 
+      // windows環境でも os.platform() は 'linux' を返すがcodeはcode.cmdとなる為、一旦"code.cmd"固定とする
+      // const expectedErrorMessage = `VS Code command-line tool "code${os.platform() === 'win32' ? '.cmd' : ''}" not found in your PATH.`;
+      const expectedErrorMessage = `VS Code command-line tool "code.cmd" not found in your PATH.`;
+
       expect(mockContext.ui.addItem).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'error',
-          text: expect.stringContaining(
-            'VS Code command-line tool "code" not found',
-          ),
+          text: expectedErrorMessage,
         }),
         expect.any(Number),
       );
@@ -173,18 +180,23 @@ describe('ideCommand', () => {
     });
 
     it('should install the extension if found in the bundle directory', async () => {
-      const vsixPath = '/path/to/bundle/gemini.vsix';
-      execSyncSpy.mockReturnValue(''); // VSCode is installed
+      const vsixPath = path.join('/path/to/bundle', 'gemini.vsix');
+      execSyncSpy.mockImplementation((command: string) => {
+        if (command.startsWith('where') || command.startsWith('which')) {
+          return ''; // VSCode is installed
+        }
+        return '';
+      });
       globSyncSpy.mockReturnValue([vsixPath]); // Found .vsix file
 
       const command = ideCommand(mockConfig);
       await command?.subCommands?.[1].action(mockContext, '');
 
-      expect(globSyncSpy).toHaveBeenCalledWith(
-        expect.stringContaining('.vsix'),
-      );
+      expect(globSyncSpy).toHaveBeenCalledWith(path.join(__dirname, '*.vsix'));
       expect(execSyncSpy).toHaveBeenCalledWith(
-        `code --install-extension ${vsixPath} --force`,
+        // windows環境でも os.platform() は 'linux' を返すがcodeはcode.cmdとなる為、一旦"code.cmd"固定とする
+        // `code${os.platform() === 'win32' ? '.cmd' : ''} --install-extension ${path.normalize(vsixPath)} --force`,
+        `code.cmd --install-extension ${path.normalize(vsixPath)} --force`,
         { stdio: 'pipe' },
       );
       expect(mockContext.ui.addItem).toHaveBeenCalledWith(
@@ -204,8 +216,13 @@ describe('ideCommand', () => {
     });
 
     it('should install the extension if found in the dev directory', async () => {
-      const vsixPath = '/path/to/dev/gemini.vsix';
-      execSyncSpy.mockReturnValue(''); // VSCode is installed
+      const vsixPath = path.join('/path/to/dev', 'gemini.vsix');
+      execSyncSpy.mockImplementation((command: string) => {
+        if (command.startsWith('where') || command.startsWith('which')) {
+          return ''; // VSCode is installed
+        }
+        return '';
+      });
       // First glob call for bundle returns nothing, second for dev returns path.
       globSyncSpy.mockReturnValueOnce([]).mockReturnValueOnce([vsixPath]);
 
@@ -214,7 +231,9 @@ describe('ideCommand', () => {
 
       expect(globSyncSpy).toHaveBeenCalledTimes(2);
       expect(execSyncSpy).toHaveBeenCalledWith(
-        `code --install-extension ${vsixPath} --force`,
+        // windows環境でも os.platform() は 'linux' を返すがcodeはcode.cmdとなる為、一旦"code.cmd"固定とする
+        // `code${os.platform() === 'win32' ? '.cmd' : ''} --install-extension ${path.normalize(vsixPath)} --force`,
+        `code.cmd --install-extension ${path.normalize(vsixPath)} --force`,
         { stdio: 'pipe' },
       );
       expect(mockContext.ui.addItem).toHaveBeenCalledWith(

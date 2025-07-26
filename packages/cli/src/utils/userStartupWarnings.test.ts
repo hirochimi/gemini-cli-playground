@@ -8,7 +8,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getUserStartupWarnings } from './userStartupWarnings.js';
 import * as os from 'os';
 import fs from 'fs/promises';
-import path from 'path';
 
 vi.mock('os', () => ({
   default: { homedir: vi.fn() },
@@ -93,8 +92,6 @@ describe('getUserStartupWarnings', () => {
       vi.mocked(fs.realpath)
         .mockResolvedValueOnce('C:\\')
         .mockResolvedValueOnce(homeDir);
-
-      vi.spyOn(path, 'dirname').mockImplementation(path.win32.dirname);
 
       const warnings = await getUserStartupWarnings('C:\\');
 

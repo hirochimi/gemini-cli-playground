@@ -9,6 +9,7 @@ import type { Mocked } from 'vitest';
 import { FileDiscoveryService } from './fileDiscoveryService.js';
 import { GitIgnoreParser } from '../utils/gitIgnoreParser.js';
 import * as gitUtils from '../utils/gitUtils.js';
+import * as path from 'path';
 
 // Mock the GitIgnoreParser
 vi.mock('../utils/gitIgnoreParser.js');
@@ -19,7 +20,10 @@ vi.mock('../utils/gitUtils.js');
 describe('FileDiscoveryService', () => {
   let service: FileDiscoveryService;
   let mockGitIgnoreParser: Mocked<GitIgnoreParser>;
-  const mockProjectRoot = '/test/project';
+  const parsedPath = path.parse(__dirname);
+  const mockProjectRoot =
+    (parsedPath.root.length > 2 ? parsedPath.root.substring(0, 2) : '') +
+    path.normalize('/test/project');
 
   beforeEach(() => {
     mockGitIgnoreParser = {
@@ -42,7 +46,9 @@ describe('FileDiscoveryService', () => {
   describe('initialization', () => {
     it('should initialize git ignore parser by default', () => {
       service = new FileDiscoveryService(mockProjectRoot);
-      expect(GitIgnoreParser).toHaveBeenCalledWith(mockProjectRoot);
+      expect(GitIgnoreParser).toHaveBeenCalledWith(
+        path.normalize(mockProjectRoot),
+      );
       expect(GitIgnoreParser).toHaveBeenCalledTimes(2);
       expect(mockGitIgnoreParser.loadGitRepoPatterns).toHaveBeenCalled();
       expect(mockGitIgnoreParser.loadPatterns).toHaveBeenCalled();

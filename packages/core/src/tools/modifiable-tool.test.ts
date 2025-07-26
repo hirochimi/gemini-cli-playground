@@ -345,8 +345,12 @@ describe('modifyWithEditor', () => {
 
     expect(oldFilePath).toMatch(/gemini-cli-modify-test-file-old-\d+\.txt$/);
     expect(newFilePath).toMatch(/gemini-cli-modify-test-file-new-\d+\.txt$/);
-    expect(oldFilePath).toContain(`${tempDir}/gemini-cli-tool-modify-diffs/`);
-    expect(newFilePath).toContain(`${tempDir}/gemini-cli-tool-modify-diffs/`);
+    expect(oldFilePath).toContain(
+      path.join(tempDir, 'gemini-cli-tool-modify-diffs', path.sep),
+    );
+    expect(newFilePath).toContain(
+      path.join(tempDir, 'gemini-cli-tool-modify-diffs', path.sep),
+    );
   });
 
   it('should create temp files with correct naming without extension', async () => {
@@ -368,8 +372,12 @@ describe('modifyWithEditor', () => {
 
     expect(oldFilePath).toMatch(/gemini-cli-modify-test-file-old-\d+$/);
     expect(newFilePath).toMatch(/gemini-cli-modify-test-file-new-\d+$/);
-    expect(oldFilePath).toContain(`${tempDir}/gemini-cli-tool-modify-diffs/`);
-    expect(newFilePath).toContain(`${tempDir}/gemini-cli-tool-modify-diffs/`);
+    expect(oldFilePath).toContain(
+      path.join(tempDir, 'gemini-cli-tool-modify-diffs', path.sep),
+    );
+    expect(newFilePath).toContain(
+      path.join(tempDir, 'gemini-cli-tool-modify-diffs', path.sep),
+    );
   });
 });
 

@@ -11,21 +11,21 @@ type SpyInstance = ReturnType<typeof vi.spyOn>;
 import { reportError } from './errorReporting.js';
 import fs from 'node:fs/promises';
 import os from 'node:os';
-import * as path from 'path';
+import path from 'path';
 
 // Mock dependencies
 vi.mock('node:fs/promises');
-vi.mock('node:os');
+// vi.mock('node:os');
 
 describe('reportError', () => {
+  const MOCK_TMP_DIR = os.tmpdir();
   let consoleErrorSpy: SpyInstance;
-  const MOCK_TMP_DIR = '/tmp';
   const MOCK_TIMESTAMP = '2025-01-01T00-00-00-000Z';
 
   beforeEach(() => {
     vi.resetAllMocks();
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    (os.tmpdir as Mock).mockReturnValue(MOCK_TMP_DIR);
+    // (os.tmpdir as Mock).mockReturnValue(MOCK_TMP_DIR);
     vi.spyOn(Date.prototype, 'toISOString').mockReturnValue(MOCK_TIMESTAMP);
   });
 
@@ -34,8 +34,9 @@ describe('reportError', () => {
   });
 
   const getExpectedReportPath = (type: string) =>
-    path.normalize(
-      `${MOCK_TMP_DIR}/gemini-client-error-${type}-${MOCK_TIMESTAMP}.json`,
+    path.join(
+      MOCK_TMP_DIR,
+      `gemini-client-error-${type}-${MOCK_TIMESTAMP}.json`,
     );
 
   it('should generate a report and log the path', async () => {

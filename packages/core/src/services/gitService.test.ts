@@ -80,9 +80,12 @@ vi.mock('crypto', () => ({
 }));
 
 describe('GitService', () => {
-  const mockProjectRoot = '/test/project';
-  const mockHomedir = '/mock/home';
-  const mockHash = 'mock-hash';
+  const parsedPath = path.parse(__dirname);
+  const drive =
+    parsedPath.root.length > 2 ? parsedPath.root.substring(0, 2) : '';
+  const mockProjectRoot = drive + path.normalize('/test/project');
+  const mockHomedir = drive + path.normalize('/mock/home');
+  const mockHash = drive + path.normalize('mock-hash');
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -227,7 +230,7 @@ describe('GitService', () => {
       const service = new GitService(mockProjectRoot);
       await service.setupShadowGitRepository();
       expect(hoistedMockReadFile).toHaveBeenCalledWith(
-        visibleGitIgnorePath,
+        path.normalize(visibleGitIgnorePath),
         'utf-8',
       );
       expect(hoistedMockWriteFile).toHaveBeenCalledWith(

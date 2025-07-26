@@ -365,6 +365,7 @@ describe('InputPrompt', () => {
       vi.mocked(clipboardUtils.clipboardHasImage).mockResolvedValue(true);
       vi.mocked(clipboardUtils.saveClipboardImage).mockResolvedValue(
         '/test/.gemini-clipboard/clipboard-456.png',
+        // path.normalize('/test/.gemini-clipboard/clipboard-456.png'),
       );
 
       // Set initial text and cursor position
@@ -387,8 +388,8 @@ describe('InputPrompt', () => {
         .calls[0];
       expect(actualCall[0]).toBe(5); // start offset
       expect(actualCall[1]).toBe(5); // end offset
-      expect(actualCall[2]).toMatch(
-        /@.*\.gemini-clipboard\/clipboard-456\.png/,
+      expect(actualCall[2].replaceAll('\\', '/')).toMatch(		//        new RegExp(`@.*\.gemini-clipboard\/clipboard-456\.png`),
+        new RegExp(`@.*.gemini-clipboard/clipboard-456.png`),
       ); // flexible path match
       unmount();
     });

@@ -150,11 +150,15 @@ describe('GlobTool', () => {
       expect(typeof llmContent).toBe('string');
 
       const filesListed = llmContent
-        .substring(llmContent.indexOf(':') + 1)
+        .substring(llmContent.indexOf(':\n') + ':\n'.length)
         .trim()
         .split('\n');
-      expect(filesListed[0]).toContain(path.join(tempRootDir, 'newer.sortme'));
-      expect(filesListed[1]).toContain(path.join(tempRootDir, 'older.sortme'));
+      expect(filesListed[0]).toContain(
+        path.normalize(path.join(tempRootDir, 'newer.sortme')),
+      );
+      expect(filesListed[1]).toContain(
+        path.normalize(path.join(tempRootDir, 'older.sortme')),
+      );
     });
   });
 

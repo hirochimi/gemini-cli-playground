@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { GitIgnoreParser } from './gitIgnoreParser.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import { isGitRepository } from './gitUtils.js';
 
 // Mock fs module
@@ -18,9 +19,10 @@ vi.mock('./gitUtils.js');
 
 describe('GitIgnoreParser', () => {
   let parser: GitIgnoreParser;
-  const mockProjectRoot = '/test/project';
+  let mockProjectRoot: string;
 
   beforeEach(() => {
+    mockProjectRoot = path.join(os.tmpdir(), 'test-project');
     parser = new GitIgnoreParser(mockProjectRoot);
     // Reset mocks before each test
     vi.mocked(fs.readFileSync).mockClear();
@@ -63,8 +65,10 @@ node_modules/
 
     it('should handle git exclude file', () => {
       vi.mocked(fs.readFileSync).mockImplementation((filePath) => {
+        const normalizedFilePath = path.normalize(filePath.toString());
         if (
-          filePath === path.join(mockProjectRoot, '.git', 'info', 'exclude')
+          normalizedFilePath ===
+          path.normalize(path.join(mockProjectRoot, '.git', 'info', 'exclude'))
         ) {
           return 'temp/\n*.tmp';
         }
@@ -80,7 +84,11 @@ node_modules/
     it('should handle custom patterns file name', () => {
       vi.mocked(isGitRepository).mockReturnValue(false);
       vi.mocked(fs.readFileSync).mockImplementation((filePath) => {
-        if (filePath === path.join(mockProjectRoot, '.geminiignore')) {
+        const normalizedFilePath = path.normalize(filePath.toString());
+        if (
+          normalizedFilePath ===
+          path.normalize(path.join(mockProjectRoot, '.geminiignore'))
+        ) {
           return 'temp/\n*.tmp';
         }
         throw new Error('ENOENT');

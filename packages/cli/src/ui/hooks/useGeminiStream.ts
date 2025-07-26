@@ -45,7 +45,8 @@ import { findLastSafeSplitPoint } from '../utils/markdownUtilities.js';
 import { useStateAndRef } from './useStateAndRef.js';
 import { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { useLogger } from './useLogger.js';
-import { promises as fs } from 'fs';
+import * as fs from 'fs/promises'; // useGeminiStream本体・test共にこの書式のimportだとモックが適用される
+// import { promises as fs } from 'fs';		// useGeminiStream本体・test共にこの書式のimportでもモックは適用されない
 import path from 'path';
 import {
   useReactToolScheduler,
@@ -97,6 +98,7 @@ export const useGeminiStream = (
   logFilePath: string,
 ) => {
   const [initError, setInitError] = useState<string | null>(null);
+  const logFilePathRef = useRef(logFilePath);
   const abortControllerRef = useRef<AbortController | null>(null);
   const turnCancelledRef = useRef(false);
   const [isResponding, setIsResponding] = useState<boolean>(false);
@@ -237,7 +239,10 @@ export const useGeminiStream = (
         onDebugMessage(`User query: '${trimmedQuery}'`);
         await logger?.logMessage(MessageSenderType.USER, trimmedQuery);
 
-        await fs.appendFile(logFilePath, `You: ${trimmedQuery}\n`);
+        await fs.appendFile(
+          logFilePathRef.current,
+          `▶ ${trimmedQuery} ◀\n\n`,
+        );
 
         // Handle UI-only commands first
         const slashCommandResult = await handleSlashCommand(trimmedQuery);
@@ -339,7 +344,7 @@ export const useGeminiStream = (
         // Prevents additional output after a user initiated cancel.
         return '';
       }
-      await fs.appendFile(logFilePath, eventValue);
+      await fs.appendFile(logFilePathRef.current, eventValue);
       let newGeminiMessageBuffer = currentGeminiMessageBuffer + eventValue;
       if (
         pendingHistoryItemRef.current?.type !== 'gemini' &&
@@ -690,7 +695,7 @@ export const useGeminiStream = (
         }
       } finally {
         setIsResponding(false);
-        await fs.appendFile(logFilePath, '\n\n\n');
+        await fs.appendFile(logFilePathRef.current, '\n\n\n');
       }
     },
     [

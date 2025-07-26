@@ -89,6 +89,26 @@
       "program": "C:/gemini-cli/gcli.py",
       "cwd": "C:/gemini-cli",
       "console": "externalTerminal"
+    },
+    {
+      "name": "Debug Current Vitest File",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "test",
+        "-w",
+        "packages",
+        "--",
+        "--inspect-brk=9229",
+        "--no-file-parallelism",
+        "${relativeFile}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"]
     }
   ],
   "inputs": [

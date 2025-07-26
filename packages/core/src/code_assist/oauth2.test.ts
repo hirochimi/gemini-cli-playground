@@ -289,8 +289,13 @@ describe('oauth2', () => {
 
       await getOauthClient(AuthType.LOGIN_WITH_GOOGLE, mockConfig);
 
+      const GEMINI_DIR = '.gemini';
+      const CREDENTIAL_FILENAME = 'oauth_creds.json';
+
       expect(fs.promises.readFile).toHaveBeenCalledWith(
-        '/user/home/.gemini/oauth_creds.json',
+        process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+          path.join(os.homedir(), GEMINI_DIR, CREDENTIAL_FILENAME),
+        // path.join(os.homedir(), '.gemini', 'oauth_creds.json'),
         'utf-8',
       );
       expect(mockClient.setCredentials).toHaveBeenCalledWith(cachedCreds);

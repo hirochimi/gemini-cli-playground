@@ -10,6 +10,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useCompletion } from './useCompletion.js';
 import * as fs from 'fs/promises';
 import { glob } from 'glob';
+import * as path from 'path';
 import {
   CommandContext,
   CommandKind,
@@ -45,7 +46,10 @@ describe('useCompletion git-aware filtering integration', () => {
   let mockFileDiscoveryService: Mocked<FileDiscoveryService>;
   let mockConfig: MockConfig;
 
-  const testCwd = '/test/project';
+  const parsedPath = path.parse(__dirname);
+  const testCwd =
+    (parsedPath.root.length > 2 ? parsedPath.root.substring(0, 2) : '') +
+    path.normalize('/test/project');
   const slashCommands = [
     {
       name: 'help',
@@ -167,7 +171,10 @@ describe('useCompletion git-aware filtering integration', () => {
   });
 
   it('should filter git-ignored entries from @ completions', async () => {
-    const globResults = [`${testCwd}/data`, `${testCwd}/dist`];
+    const globResults = [
+      path.join(testCwd, 'data'),
+      path.join(testCwd, 'dist'),
+    ];
     vi.mocked(glob).mockResolvedValue(globResults);
 
     // Mock git ignore service to ignore certain files
@@ -274,9 +281,9 @@ describe('useCompletion git-aware filtering integration', () => {
         dirPath: string | Buffer | URL,
         options?: { withFileTypes?: boolean },
       ) => {
-        const path = dirPath.toString();
+        const normalizedPath = path.normalize(dirPath.toString());
         if (options?.withFileTypes) {
-          if (path === testCwd) {
+          if (normalizedPath === testCwd) {
             return [
               { name: 'data', isDirectory: () => true },
               { name: 'dist', isDirectory: () => true },
@@ -285,13 +292,13 @@ describe('useCompletion git-aware filtering integration', () => {
               { name: '.env', isDirectory: () => false },
             ] as unknown as Awaited<ReturnType<typeof fs.readdir>>;
           }
-          if (path.endsWith('/src')) {
+          if (normalizedPath === path.join(testCwd, 'src')) {
             return [
               { name: 'index.ts', isDirectory: () => false },
               { name: 'components', isDirectory: () => true },
             ] as unknown as Awaited<ReturnType<typeof fs.readdir>>;
           }
-          if (path.endsWith('/temp')) {
+          if (normalizedPath === path.join(testCwd, 'temp')) {
             return [
               { name: 'temp.log', isDirectory: () => false },
             ] as unknown as Awaited<ReturnType<typeof fs.readdir>>;
@@ -348,7 +355,10 @@ describe('useCompletion git-aware filtering integration', () => {
   });
 
   it('should not perform recursive search when disabled in config', async () => {
-    const globResults = [`${testCwd}/data`, `${testCwd}/dist`];
+    const globResults = [
+      path.join(testCwd, 'data'),
+      path.join(testCwd, 'dist'),
+    ];
     vi.mocked(glob).mockResolvedValue(globResults);
 
     // Disable recursive search in the mock config
@@ -380,7 +390,9 @@ describe('useCompletion git-aware filtering integration', () => {
     // `glob` should not be called because recursive search is disabled
     expect(glob).not.toHaveBeenCalled();
     // `fs.readdir` should be called for the top-level directory instead
-    expect(fs.readdir).toHaveBeenCalledWith(testCwd, { withFileTypes: true });
+    expect(fs.readdir).toHaveBeenCalledWith(path.normalize(testCwd), {
+      withFileTypes: true,
+    });
   });
 
   it('should work without config (fallback behavior)', async () => {
@@ -518,7 +530,10 @@ describe('useCompletion git-aware filtering integration', () => {
     expect(fs.readdir).not.toHaveBeenCalled(); // Ensure glob is used instead of readdir
     expect(result.current.suggestions).toEqual([
       { label: 'README.md', value: 'README.md' },
-      { label: 'src/index.ts', value: 'src/index.ts' },
+      {
+        label: path.join('src', 'index.ts'),
+        value: path.join('src', 'index.ts'),
+      },
     ]);
   });
 
@@ -554,7 +569,10 @@ describe('useCompletion git-aware filtering integration', () => {
     expect(result.current.suggestions).toEqual([
       { label: '.env', value: '.env' },
       { label: '.gitignore', value: '.gitignore' },
-      { label: 'src/index.ts', value: 'src/index.ts' },
+      {
+        label: path.join('src', 'index.ts'),
+        value: path.join('src', 'index.ts'),
+      },
     ]);
   });
 

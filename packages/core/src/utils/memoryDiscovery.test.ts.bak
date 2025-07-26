@@ -29,6 +29,9 @@ vi.mock('fs', async (importOriginal) => {
   return {
     ...actual, // Spread actual to get all exports, including Stats and Dirent if they are classes/constructors
     constants: { ...actual.constants }, // Preserve constants
+    access: vi.fn(() => {
+      console.log('Mocked fs.access called');
+    }),
   };
 });
 vi.mock('os');
@@ -37,10 +40,9 @@ describe('loadServerHierarchicalMemory', () => {
   const mockFs = fsPromises as Mocked<typeof fsPromises>;
   const mockOs = os as Mocked<typeof os>;
 
-  const driveLatter = path.parse(__dirname).root;
-  const CWD = path.join(driveLatter, '/test/project/src');
-  const PROJECT_ROOT = path.join(driveLatter, '/test/project');
-  const USER_HOME = path.join(driveLatter, '/test/userhome');
+  const CWD = '/test/project/src';
+  const PROJECT_ROOT = '/test/project';
+  const USER_HOME = '/test/userhome';
 
   let GLOBAL_GEMINI_DIR: string;
   let GLOBAL_GEMINI_FILE: string; // Defined in beforeEach

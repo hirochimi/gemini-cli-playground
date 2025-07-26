@@ -101,7 +101,13 @@ export const AppWrapper = (props: AppProps) => (
   </SessionStatsProvider>
 );
 
-const App = ({ config, settings, startupWarnings = [], version, logFilePath }: AppProps) => {
+const App = ({
+  config,
+  settings,
+  startupWarnings = [],
+  version,
+  logFilePath,
+}: AppProps) => {
   const isFocused = useFocus();
   useBracketedPaste();
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);

@@ -7,7 +7,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
+
+// import * as fs from 'fs/promises'; // useGeminiStream本体・test共にこの書式のimportだとモックが適用される
+// import { promises as fs } from 'fs';		// useGeminiStream本体・test共にこの書式のimportでもモックは適用されない
 import { useGeminiStream, mergePartListUnions } from './useGeminiStream.js';
+
 import { useInput } from 'ink';
 import {
   useReactToolScheduler,
@@ -34,6 +38,33 @@ import { Dispatch, SetStateAction } from 'react';
 import { LoadedSettings } from '../../config/settings.js';
 
 // --- MOCKS ---
+vi.mock('fs/promises', async () => {
+  const actualFsPromises = await vi.importActual('fs/promises');
+  console.log(`Mocked fs.promises`);
+
+  return {
+    ...actualFsPromises, // 元のfs/promisesの他のメソッドは維持
+    open: vi.fn(
+      (path: string, flags?: string | number, mode?: string | number) => {
+        console.log(
+          `Mocked fs.promises.open called with path: ${path} ${flags} ${mode}`,
+        );
+        return 0; // 常にモックされたFileHandleを返す
+      },
+    ),
+    // 引数の数や型は評価されない↓でもOK
+    // appendFile: vi.fn(() => {
+    //   console.log(`Mocked fs.promises.appendFile called with path:`);
+    // }
+    // ),
+    appendFile: vi.fn((path: string, value: string) => {
+      console.log(
+        `Mocked fs.promises.appendFile called with path: ${path} ${value}`,
+      );
+    }),
+  };
+});
+
 const mockSendMessageStream = vi
   .fn()
   .mockReturnValue((async function* () {})());
@@ -113,6 +144,8 @@ vi.mock('./useLogger.js', () => ({
     logMessage: vi.fn().mockResolvedValue(undefined),
   }),
 }));
+
+const mockLogFilePath = '/tmp/gemini-cli-test-log.txt';
 
 const mockStartNewPrompt = vi.fn();
 const mockAddUsage = vi.fn();
@@ -409,6 +442,7 @@ describe('useGeminiStream', () => {
           () => Promise.resolve(),
           false,
           () => {},
+          mockLogFilePath,
         );
       },
       {
@@ -425,6 +459,7 @@ describe('useGeminiStream', () => {
           shellModeActive: false,
           loadedSettings: mockLoadedSettings,
           toolCalls: initialToolCalls,
+          logFilePath: mockLogFilePath,
         },
       },
     );

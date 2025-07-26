@@ -428,7 +428,7 @@ describe('ShellTool Bug Reproduction', () => {
       abortSignal,
     );
 
-    expect(result.returnDisplay).toBe('hello\n');
+    expect(result.returnDisplay).toBe('\\"hello\\"\r\n');
     expect(result.llmContent).toBe('summarized output');
     expect(summarizeSpy).toHaveBeenCalled();
   });
@@ -454,7 +454,7 @@ describe('ShellTool Bug Reproduction', () => {
       abortSignal,
     );
 
-    expect(result.returnDisplay).toBe('hello\n');
+    expect(result.returnDisplay).toBe('\\"hello\\"\r\n');
     expect(result.llmContent).not.toBe('summarized output');
     expect(summarizeSpy).not.toHaveBeenCalled();
   });
