@@ -80,6 +80,52 @@
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug CLI (Custom)",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/packages/cli/dist/index.js",
+      "args": ["--model", "gemini-2.5-flash"],
+      "preLaunchTask": "npm: build",
+      "cwd": "${workspaceFolder}/packages/cli",
+      "outFiles": ["${workspaceFolder}/packages/cli/dist/**/*.js"],
+      "console": "externalTerminal"
+    },
+    {
+      "name": "Python Debugger: Python File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}"
+    },
+    {
+      "name": "Python Debugger gcli",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "C:/gemini-cli/gcli.py",
+      "cwd": "C:/gemini-cli",
+      "console": "externalTerminal"
+    },
+    {
+      "name": "Debug Current Vitest File",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "test",
+        "-w",
+        "packages",
+        "--",
+        "--inspect-brk=9229",
+        "--no-file-parallelism",
+        "${relativeFile}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"]
     }
   ],
   "inputs": [

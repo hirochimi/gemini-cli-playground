@@ -45,7 +45,8 @@ import { findLastSafeSplitPoint } from '../utils/markdownUtilities.js';
 import { useStateAndRef } from './useStateAndRef.js';
 import { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { useLogger } from './useLogger.js';
-import { promises as fs } from 'fs';
+import * as fs from 'fs/promises'; // useGeminiStream本体・test共にこの書式のimportだとモックが適用される
+// import { promises as fs } from 'fs';		// useGeminiStream本体・test共にこの書式のimportでもモックは適用されない
 import path from 'path';
 import {
   useReactToolScheduler,
@@ -94,8 +95,10 @@ export const useGeminiStream = (
   performMemoryRefresh: () => Promise<void>,
   modelSwitchedFromQuotaError: boolean,
   setModelSwitchedFromQuotaError: React.Dispatch<React.SetStateAction<boolean>>,
+  logFilePath: string,
 ) => {
   const [initError, setInitError] = useState<string | null>(null);
+  const logFilePathRef = useRef(logFilePath);
   const abortControllerRef = useRef<AbortController | null>(null);
   const turnCancelledRef = useRef(false);
   const [isResponding, setIsResponding] = useState<boolean>(false);
@@ -236,6 +239,11 @@ export const useGeminiStream = (
         onDebugMessage(`User query: '${trimmedQuery}'`);
         await logger?.logMessage(MessageSenderType.USER, trimmedQuery);
 
+        await fs.appendFile(
+          logFilePathRef.current,
+          `▶ ${trimmedQuery} ◀\n\n`,
+        );
+
         // Handle UI-only commands first
         const slashCommandResult = await handleSlashCommand(trimmedQuery);
 
@@ -327,15 +335,16 @@ export const useGeminiStream = (
   // --- Stream Event Handlers ---
 
   const handleContentEvent = useCallback(
-    (
+    async (
       eventValue: ContentEvent['value'],
       currentGeminiMessageBuffer: string,
       userMessageTimestamp: number,
-    ): string => {
+    ): Promise<string> => {
       if (turnCancelledRef.current) {
         // Prevents additional output after a user initiated cancel.
         return '';
       }
+      await fs.appendFile(logFilePathRef.current, eventValue);
       let newGeminiMessageBuffer = currentGeminiMessageBuffer + eventValue;
       if (
         pendingHistoryItemRef.current?.type !== 'gemini' &&
@@ -535,7 +544,7 @@ export const useGeminiStream = (
             setThought(event.value);
             break;
           case ServerGeminiEventType.Content:
-            geminiMessageBuffer = handleContentEvent(
+            geminiMessageBuffer = await handleContentEvent(
               event.value,
               geminiMessageBuffer,
               userMessageTimestamp,
@@ -686,6 +695,7 @@ export const useGeminiStream = (
         }
       } finally {
         setIsResponding(false);
+        await fs.appendFile(logFilePathRef.current, '\n\n\n');
       }
     },
     [

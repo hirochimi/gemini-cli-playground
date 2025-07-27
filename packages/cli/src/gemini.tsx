@@ -9,7 +9,9 @@ import { render } from 'ink';
 import { AppWrapper } from './ui/App.js';
 import { loadCliConfig, parseArguments, CliArgs } from './config/config.js';
 import { readStdin } from './utils/readStdin.js';
-import { basename } from 'node:path';
+import fs from 'node:fs';
+import path, { basename } from 'node:path';
+
 import v8 from 'node:v8';
 import os from 'node:os';
 import { spawn } from 'node:child_process';
@@ -86,6 +88,21 @@ async function relaunchWithAdditionalArgs(additionalArgs: string[]) {
   process.exit(0);
 }
 import { runAcpPeer } from './acp/acpPeer.js';
+
+function getLogFileName() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  return path.join(
+    os.homedir(),
+    '.gemini',
+    'logs',
+    `gemini-cli-${year}${month}${day}-${hours}${minutes}.txt`,
+  );
+}
 
 export function setupUnhandledRejectionHandler() {
   let unhandledRejectionOccurred = false;
@@ -233,6 +250,8 @@ export async function main() {
   // Render UI, passing necessary config values. Check that there is no command line question.
   if (shouldBeInteractive) {
     const version = await getCliVersion();
+    const logFilePath = getLogFileName();
+    createFileAndPath(logFilePath);
     setWindowTitle(basename(workspaceRoot), settings);
     const instance = render(
       <React.StrictMode>
@@ -241,6 +260,7 @@ export async function main() {
           settings={settings}
           startupWarnings={startupWarnings}
           version={version}
+          logFilePath={logFilePath}
         />
       </React.StrictMode>,
       { exitOnCtrlC: false },
@@ -333,4 +353,15 @@ async function loadNonInteractiveConfig(
     settings.merged.selectedAuthType,
     finalConfig,
   );
+}
+async function createFileAndPath(filePath: string): Promise<void> {
+  try {
+    const directory = path.dirname(filePath);
+    await fs.promises.mkdir(directory, { recursive: true });
+    await fs.promises.writeFile(filePath, '');
+    console.log(`ファイル '${filePath}' に書き込みました。`);
+  } catch (error) {
+    console.error(`ファイルの書き込み中にエラーが発生しました: ${error}`);
+    throw error;
+  }
 }

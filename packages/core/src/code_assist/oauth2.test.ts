@@ -265,6 +265,7 @@ describe('oauth2', () => {
     });
 
     it('should attempt to load cached credentials first', async () => {
+      delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
       const cachedCreds = { refresh_token: 'cached-token' };
       const credsPath = path.join(tempHomeDir, '.gemini', 'oauth_creds.json');
       await fs.promises.mkdir(path.dirname(credsPath), { recursive: true });
