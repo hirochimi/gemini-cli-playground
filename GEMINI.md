@@ -183,3 +183,13 @@ Only write high-value comments if at all. Avoid talking to the user through comm
 ## General style requirements
 
 Use hyphens instead of underscores in flag names (e.g. `my-flag` instead of `my_flag`).
+
+## 開発ワークフロー
+
+### ■クリーンビルド・テスト
+
+クリーンビルド・テストを実行する、そしてエラーがなければフォーク先にPushする。
+
+### ■フォーク元チェック
+
+フォーク元の更新をチェックして、更新があればマージしｔ■クリーンビルド・テストを行なう。

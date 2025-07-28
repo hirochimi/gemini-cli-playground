@@ -89,7 +89,7 @@
       "program": "${workspaceFolder}/packages/cli/dist/index.js",
       "args": ["--model", "gemini-2.5-flash"],
       "preLaunchTask": "npm: build",
-      "cwd": "${workspaceFolder}/packages/cli",
+      "cwd": "${workspaceFolder}",
       "outFiles": ["${workspaceFolder}/packages/cli/dist/**/*.js"],
       "console": "externalTerminal"
     },

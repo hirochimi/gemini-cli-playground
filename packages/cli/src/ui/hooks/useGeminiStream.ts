@@ -239,10 +239,16 @@ export const useGeminiStream = (
         onDebugMessage(`User query: '${trimmedQuery}'`);
         await logger?.logMessage(MessageSenderType.USER, trimmedQuery);
 
-        await fs.appendFile(
-          logFilePathRef.current,
-          `▶ ${trimmedQuery} ◀\n\n`,
-        );
+        try {
+          await fs.appendFile(
+            logFilePathRef.current,
+            `▶ ${trimmedQuery} ◀\n\n`,
+          );
+        } catch (error) {
+          onDebugMessage(
+            `Failed to write user prompt to log file: ${getErrorMessage(error)}`,
+          );
+        }
 
         // Handle UI-only commands first
         const slashCommandResult = await handleSlashCommand(trimmedQuery);
@@ -344,7 +350,6 @@ export const useGeminiStream = (
         // Prevents additional output after a user initiated cancel.
         return '';
       }
-      await fs.appendFile(logFilePathRef.current, eventValue);
       let newGeminiMessageBuffer = currentGeminiMessageBuffer + eventValue;
       if (
         pendingHistoryItemRef.current?.type !== 'gemini' &&
@@ -365,6 +370,11 @@ export const useGeminiStream = (
           type: item?.type as 'gemini' | 'gemini_content',
           text: newGeminiMessageBuffer,
         }));
+        // try {
+        //   await fs.appendFile(logFilePathRef.current, newGeminiMessageBuffer);
+        // } catch (error) {
+        //   onDebugMessage(`Failed to write Gemini content to log file: ${getErrorMessage(error)}`);
+        // }
       } else {
         // This indicates that we need to split up this Gemini Message.
         // Splitting a message is primarily a performance consideration. There is a
@@ -376,6 +386,7 @@ export const useGeminiStream = (
         // broken up so that there are more "statically" rendered.
         const beforeText = newGeminiMessageBuffer.substring(0, splitPoint);
         const afterText = newGeminiMessageBuffer.substring(splitPoint);
+        await fs.appendFile(logFilePathRef.current, beforeText);
         addItem(
           {
             type: pendingHistoryItemRef.current?.type as
@@ -651,6 +662,7 @@ export const useGeminiStream = (
       setIsResponding(true);
       setInitError(null);
 
+      let lastPendingHistoryItemText = '';
       try {
         const stream = geminiClient.sendMessageStream(
           queryToSend,
@@ -668,6 +680,10 @@ export const useGeminiStream = (
         }
 
         if (pendingHistoryItemRef.current) {
+          // if (lastPendingHistoryItemText !== '')
+          //   await fs.appendFile(logFilePathRef.current, lastPendingHistoryItemText);
+          lastPendingHistoryItemText =
+            pendingHistoryItemRef.current?.text || '';
           addItem(pendingHistoryItemRef.current, userMessageTimestamp);
           setPendingHistoryItem(null);
         }
@@ -695,7 +711,16 @@ export const useGeminiStream = (
         }
       } finally {
         setIsResponding(false);
-        await fs.appendFile(logFilePathRef.current, '\n\n\n');
+        try {
+          await fs.appendFile(
+            logFilePathRef.current,
+            lastPendingHistoryItemText + '\n\n\n',
+          );
+        } catch (error) {
+          onDebugMessage(
+            `Failed to write final Gemini response to log file: ${getErrorMessage(error)}`,
+          );
+        }
       }
     },
     [
@@ -714,6 +739,7 @@ export const useGeminiStream = (
       startNewPrompt,
       getPromptCount,
       handleLoopDetectedEvent,
+      onDebugMessage,
     ],
   );
 
