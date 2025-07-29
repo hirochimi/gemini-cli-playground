@@ -35,6 +35,7 @@ import {
 } from '../types.js';
 import { Dispatch, SetStateAction } from 'react';
 import { LoadedSettings } from '../../config/settings.js';
+import { FileLogger } from '../../utils/fileLogger.js';
 
 // --- MOCKS ---
 vi.mock('fs/promises', async () => {
@@ -51,6 +52,12 @@ vi.mock('fs/promises', async () => {
         return 0; // 常にモックされたFileHandleを返す
       },
     ),
+    mkdir: vi.fn(() => {
+      console.log(`Mocked fs.promises.mkdir called`);
+    }),
+    writeFile: vi.fn(() => {
+      console.log(`Mocked fs.promises.writeFile called`);
+    }),
     // 引数の数や型は評価されない↓でもOK
     // appendFile: vi.fn(() => {
     //   console.log(`Mocked fs.promises.appendFile called with path:`);
@@ -164,6 +171,9 @@ vi.mock('../utils/errorParsing.js', () => ({
 }));
 
 // --- END MOCKS ---
+
+const fileLogger = new FileLogger(process.cwd());
+await fileLogger.initialize();
 
 describe('mergePartListUnions', () => {
   it('should merge multiple PartListUnion arrays', () => {
@@ -439,6 +449,7 @@ describe('useGeminiStream', () => {
           () => Promise.resolve(),
           false,
           () => {},
+          fileLogger,
         );
       },
       {
@@ -581,6 +592,7 @@ describe('useGeminiStream', () => {
         () => Promise.resolve(),
         false,
         () => {},
+        fileLogger,
       ),
     );
 
@@ -649,6 +661,7 @@ describe('useGeminiStream', () => {
         () => Promise.resolve(),
         false,
         () => {},
+        fileLogger,
       ),
     );
 
@@ -746,6 +759,7 @@ describe('useGeminiStream', () => {
         () => Promise.resolve(),
         false,
         () => {},
+        fileLogger,
       ),
     );
 
@@ -849,6 +863,7 @@ describe('useGeminiStream', () => {
         () => Promise.resolve(),
         false,
         () => {},
+        fileLogger,
       ),
     );
 
@@ -1200,6 +1215,7 @@ describe('useGeminiStream', () => {
           mockPerformMemoryRefresh,
           false,
           () => {},
+          fileLogger,
         ),
       );
 
@@ -1252,6 +1268,7 @@ describe('useGeminiStream', () => {
           () => Promise.resolve(),
           false,
           () => {},
+          fileLogger,
         ),
       );
 
@@ -1301,6 +1318,7 @@ describe('useGeminiStream', () => {
           () => Promise.resolve(),
           false,
           () => {},
+          fileLogger,
         ),
       );
 
@@ -1348,6 +1366,7 @@ describe('useGeminiStream', () => {
           () => Promise.resolve(),
           false,
           () => {},
+          fileLogger,
         ),
       );
 
@@ -1396,6 +1415,7 @@ describe('useGeminiStream', () => {
           () => Promise.resolve(),
           false,
           () => {},
+          fileLogger,
         ),
       );
 
@@ -1484,6 +1504,7 @@ describe('useGeminiStream', () => {
             () => Promise.resolve(),
             false,
             () => {},
+            fileLogger,
           ),
         );
 

@@ -45,6 +45,7 @@ import { findLastSafeSplitPoint } from '../utils/markdownUtilities.js';
 import { useStateAndRef } from './useStateAndRef.js';
 import { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { useLogger } from './useLogger.js';
+import { FileLogger } from '../../utils/fileLogger.js';
 import * as fs from 'fs/promises'; // useGeminiStream本体・test共にこの書式のimportだとモックが適用される
 // import { promises as fs } from 'fs';		// useGeminiStream本体・test共にこの書式のimportでもモックは適用されない
 import path from 'path';
@@ -95,10 +96,10 @@ export const useGeminiStream = (
   performMemoryRefresh: () => Promise<void>,
   modelSwitchedFromQuotaError: boolean,
   setModelSwitchedFromQuotaError: React.Dispatch<React.SetStateAction<boolean>>,
-  logFilePath: string,
+  fileLogger: FileLogger,
 ) => {
   const [initError, setInitError] = useState<string | null>(null);
-  const logFilePathRef = useRef(logFilePath);
+  const fileLoggerRef = useRef(fileLogger);
   const abortControllerRef = useRef<AbortController | null>(null);
   const turnCancelledRef = useRef(false);
   const [isResponding, setIsResponding] = useState<boolean>(false);
@@ -238,17 +239,7 @@ export const useGeminiStream = (
         );
         onDebugMessage(`User query: '${trimmedQuery}'`);
         await logger?.logMessage(MessageSenderType.USER, trimmedQuery);
-
-        try {
-          await fs.appendFile(
-            logFilePathRef.current,
-            `▶ ${trimmedQuery} ◀\n\n`,
-          );
-        } catch (error) {
-          onDebugMessage(
-            `Failed to write user prompt to log file: ${getErrorMessage(error)}`,
-          );
-        }
+        await fileLoggerRef.current.append(`▶ ${trimmedQuery} ◀\n\n`);
 
         // Handle UI-only commands first
         const slashCommandResult = await handleSlashCommand(trimmedQuery);
@@ -370,11 +361,6 @@ export const useGeminiStream = (
           type: item?.type as 'gemini' | 'gemini_content',
           text: newGeminiMessageBuffer,
         }));
-        // try {
-        //   await fs.appendFile(logFilePathRef.current, newGeminiMessageBuffer);
-        // } catch (error) {
-        //   onDebugMessage(`Failed to write Gemini content to log file: ${getErrorMessage(error)}`);
-        // }
       } else {
         // This indicates that we need to split up this Gemini Message.
         // Splitting a message is primarily a performance consideration. There is a
@@ -386,7 +372,7 @@ export const useGeminiStream = (
         // broken up so that there are more "statically" rendered.
         const beforeText = newGeminiMessageBuffer.substring(0, splitPoint);
         const afterText = newGeminiMessageBuffer.substring(splitPoint);
-        await fs.appendFile(logFilePathRef.current, beforeText);
+        await fileLoggerRef.current.append(beforeText);
         addItem(
           {
             type: pendingHistoryItemRef.current?.type as
@@ -680,8 +666,6 @@ export const useGeminiStream = (
         }
 
         if (pendingHistoryItemRef.current) {
-          // if (lastPendingHistoryItemText !== '')
-          //   await fs.appendFile(logFilePathRef.current, lastPendingHistoryItemText);
           lastPendingHistoryItemText =
             pendingHistoryItemRef.current?.text || '';
           addItem(pendingHistoryItemRef.current, userMessageTimestamp);
@@ -711,16 +695,7 @@ export const useGeminiStream = (
         }
       } finally {
         setIsResponding(false);
-        try {
-          await fs.appendFile(
-            logFilePathRef.current,
-            lastPendingHistoryItemText + '\n\n\n',
-          );
-        } catch (error) {
-          onDebugMessage(
-            `Failed to write final Gemini response to log file: ${getErrorMessage(error)}`,
-          );
-        }
+        fileLoggerRef.current.append(lastPendingHistoryItemText + '\n\n\n');
       }
     },
     [
@@ -739,7 +714,6 @@ export const useGeminiStream = (
       startNewPrompt,
       getPromptCount,
       handleLoopDetectedEvent,
-      onDebugMessage,
     ],
   );
 

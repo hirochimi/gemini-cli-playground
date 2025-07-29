@@ -88,6 +88,7 @@ import { OverflowProvider } from './contexts/OverflowContext.js';
 import { ShowMoreLines } from './components/ShowMoreLines.js';
 import { PrivacyNotice } from './privacy/PrivacyNotice.js';
 import { appEvents, AppEvent } from '../utils/events.js';
+import { FileLogger } from '../utils/fileLogger.js';
 
 const CTRL_EXIT_PROMPT_DURATION_MS = 1000;
 
@@ -96,7 +97,7 @@ interface AppProps {
   settings: LoadedSettings;
   startupWarnings?: string[];
   version: string;
-  logFilePath: string;
+  fileLogger: FileLogger;
 }
 
 export const AppWrapper = (props: AppProps) => (
@@ -112,7 +113,7 @@ const App = ({
   settings,
   startupWarnings = [],
   version,
-  logFilePath,
+  fileLogger,
 }: AppProps) => {
   const isFocused = useFocus();
   useBracketedPaste();
@@ -497,7 +498,7 @@ const App = ({
     performMemoryRefresh,
     modelSwitchedFromQuotaError,
     setModelSwitchedFromQuotaError,
-    logFilePath,
+    fileLogger,
   );
 
   // Input handling
